@@ -9,7 +9,7 @@ using System.Text;
 
 namespace AssetStudio
 {
-    class Texture2DConverter
+    public class Texture2DConverter
     {
         //Texture2D
         private int m_Width;
@@ -94,8 +94,8 @@ namespace AssetStudio
             m_Height = m_Texture2D.m_Height;
             m_TextureFormat = m_Texture2D.m_TextureFormat;
             var mMipMap = m_Texture2D.m_MipMap;
-            version = m_Texture2D.preloadData.sourceFile.version;
-            var platform = m_Texture2D.preloadData.sourceFile.platform;
+            version = m_Texture2D.sourceFile.version;
+            var platform = m_Texture2D.sourceFile.m_TargetPlatform;
 
             if (version[0] < 5 || (version[0] == 5 && version[1] < 2))//5.2 down
             {
@@ -587,9 +587,9 @@ namespace AssetStudio
             dwABitMask = -16777216;
         }
 
-        private void SwapBytesForXbox(int platform)
+        private void SwapBytesForXbox(BuildTarget platform)
         {
-            if (platform == 11) //swap bytes for Xbox confirmed, PS3 not encountered
+            if (platform == BuildTarget.XBOX360) //swap bytes for Xbox confirmed, PS3 not encountered
             {
                 for (var i = 0; i < image_data_size / 2; i++)
                 {
@@ -967,7 +967,9 @@ namespace AssetStudio
             IntPtr uncompressedData;
             int uncompressedSize;
             bool result;
-            if (version[0] > 2017 || (version[0] == 2017 && version[1] >= 3)) //2017.3 and up
+            if (version[0] > 2017 || (version[0] == 2017 && version[1] >= 3)
+                || m_TextureFormat == TextureFormat.ETC_RGB4Crunched
+                || m_TextureFormat == TextureFormat.ETC2_RGBA8Crunched) //2017.3 and up
             {
                 result = DecompressUnityCRN(image_data, image_data_size, out uncompressedData, out uncompressedSize);
             }

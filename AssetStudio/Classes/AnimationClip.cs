@@ -598,7 +598,10 @@ namespace AssetStudio
         {
             m_StreamedClip = new StreamedClip(reader);
             m_DenseClip = new DenseClip(reader);
-            m_ConstantClip = new ConstantClip(reader);
+            if (version[0] > 4 || (version[0] == 4 && version[1] >= 3)) //4.3 and up
+            {
+                m_ConstantClip = new ConstantClip(reader);
+            }
             m_Binding = new ValueArrayConstant(reader, version);
         }
     }
@@ -673,7 +676,15 @@ namespace AssetStudio
 
             int numIndices = reader.ReadInt32();
             m_IndexArray = reader.ReadInt32Array(numIndices);
-
+            if (version[0] < 4 || (version[0] == 4 && version[1] < 3)) //4.3 down
+            {
+                int numAdditionalCurveIndexs = reader.ReadInt32();
+                var m_AdditionalCurveIndexArray = new List<int>(numAdditionalCurveIndexs);
+                for (int i = 0; i < numAdditionalCurveIndexs; i++)
+                {
+                    m_AdditionalCurveIndexArray.Add(reader.ReadInt32());
+                }
+            }
             int numDeltas = reader.ReadInt32();
             m_ValueArrayDelta = new List<ValueDelta>(numDeltas);
             for (int i = 0; i < numDeltas; i++)
@@ -779,9 +790,8 @@ namespace AssetStudio
         kHumanoid = 3
     };
 
-    public class AnimationClip
+    public sealed class AnimationClip : NamedObject
     {
-        public string m_Name { get; set; }
         public AnimationType m_AnimationType { get; set; }
         public bool m_Legacy { get; set; }
         public bool m_Compressed { get; set; }
@@ -802,14 +812,8 @@ namespace AssetStudio
         //public List<AnimationEvent> m_Events { get; set; }
 
 
-        public AnimationClip(AssetPreloadData preloadData)
+        public AnimationClip(AssetPreloadData preloadData) : base(preloadData)
         {
-            var sourceFile = preloadData.sourceFile;
-            var version = sourceFile.version;
-            var reader = preloadData.InitReader();
-            reader.Position = preloadData.Offset;
-
-            m_Name = reader.ReadAlignedString();
             if (version[0] >= 5)//5.0 and up
             {
                 m_Legacy = reader.ReadBoolean();
